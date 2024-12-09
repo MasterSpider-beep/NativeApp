@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/editTitleEditText"
+        android:layout_width="match_parent"
+        android:layout_height="62dp"
+        android:hint="Title"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/editAuthorEditText"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="10dp"
+        android:hint="Author"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/editReleaseDateEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Select Release Date"
+        android:focusable="false"
+        android:clickable="true"
+        android:inputType="none"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/editQuantityEditText"
+        android:layout_width="378dp"
+        android:layout_height="54dp"
+        android:layout_marginTop="10dp"
+        android:hint="Quantity"
+        android:inputType="number"
+        android:textSize="16sp" />
+
+    <CheckBox
+        android:id="@+id/editIsRentableCheckbox"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="10dp"
+        android:text="Is Rentable" />
+
+    <Button
+        android:id="@+id/saveBookButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Save" />
+</LinearLayout>
