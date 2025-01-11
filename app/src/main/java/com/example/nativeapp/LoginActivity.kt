@@ -7,6 +7,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.example.nativeapp.utils.DataStoreManager
+import kotlinx.coroutines.launch
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -77,17 +80,20 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
-    private fun saveToken(token: String) {
-        val sharedPreferences = getSharedPreferences("NativeAppPreferences", MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("AUTH_TOKEN", token)
-        editor.apply()
-    }
+//    private fun saveToken(token: String) {
+//        val sharedPreferences = getSharedPreferences("NativeAppPreferences", MODE_PRIVATE)
+//        val editor = sharedPreferences.edit()
+//        editor.putString("AUTH_TOKEN", token)
+//        editor.apply()
+//    }
 
     private fun navigateToMainPage(token: String) {
-        saveToken(token);
+        val dataStoreManager = DataStoreManager(this)
+        lifecycleScope.launch {
+            dataStoreManager.saveToken(token)
+        }
+        Log.i("LOGIN", "Entering mai activity")
         val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("TOKEN", token)
         startActivity(intent)
         finish()
     }

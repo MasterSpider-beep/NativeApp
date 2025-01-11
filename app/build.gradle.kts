@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
 }
 
 android {
@@ -54,6 +55,11 @@ dependencies {
     implementation ("com.google.android.material:material:1.9.0")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation (libs.androidx.datastore.preferences)
+    implementation (libs.androidx.room.runtime)
+    implementation (libs.androidx.room.ktx)
+    //noinspection KaptUsageInsteadOfKsp
+    kapt (libs.androidx.room.compiler.v251)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
