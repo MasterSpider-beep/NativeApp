@@ -57,6 +57,7 @@ dependencies {
     implementation ("com.google.android.material:material:1.9.0")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation (libs.androidx.work.runtime.ktx)
     implementation (libs.androidx.datastore.preferences)
     implementation (libs.androidx.room.runtime)
     implementation (libs.androidx.room.ktx)
@@ -68,6 +69,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation (libs.glide)
+    kapt ("com.github.bumptech.glide:compiler:4.13.0")
 }
 
 kapt {

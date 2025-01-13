@@ -1,5 +1,8 @@
 package com.example.nativeapp
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -9,6 +12,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.nativeapp.utils.DataStoreManager
+import com.example.nativeapp.utils.createNotificationChannel
+import com.example.nativeapp.utils.showNotification
 import kotlinx.coroutines.launch
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -80,19 +85,13 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
-//    private fun saveToken(token: String) {
-//        val sharedPreferences = getSharedPreferences("NativeAppPreferences", MODE_PRIVATE)
-//        val editor = sharedPreferences.edit()
-//        editor.putString("AUTH_TOKEN", token)
-//        editor.apply()
-//    }
 
     private fun navigateToMainPage(token: String) {
         val dataStoreManager = DataStoreManager(this)
         lifecycleScope.launch {
             dataStoreManager.saveToken(token)
         }
-        Log.i("LOGIN", "Entering mai activity")
+        Log.i("LOGIN", "Entering main activity and saved token $token")
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()

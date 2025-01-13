@@ -1,26 +1,36 @@
 package com.example.nativeapp
 
+import FetchBooksWorker
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.nativeapp.apiService.RetrofitClient
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import com.example.nativeapp.domain.Book
 import com.example.nativeapp.roomdb.BookDatabase
-import com.example.nativeapp.utils.DataStoreManager
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import java.util.concurrent.TimeUnit
+import android.os.Build
+import com.example.nativeapp.utils.NetworkStatusMonitor
+import com.example.nativeapp.utils.ShakeDetector
+import com.example.nativeapp.utils.createNotificationChannel
+import com.example.nativeapp.utils.showNotification
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var bookAdapter: BookAdapter
+    private lateinit var shakeDetector: ShakeDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,64 +39,65 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        Log.i("MAIN", "Fetching books")
-        fetchBooksFromApi()
+        val fetchBooksWorkRequest: WorkRequest = OneTimeWorkRequestBuilder<FetchBooksWorker>().build()
+        WorkManager.getInstance(this).enqueue(fetchBooksWorkRequest)
+
+        reloadBooksFromDatabase()
+
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(fetchBooksWorkRequest.id)
+            .observe(this, Observer { workInfo ->
+                if (workInfo != null && workInfo.state.isFinished) {
+                    reloadBooksFromDatabase()
+                }
+            })
+
+        schedulePeriodicWork(this)
+
+        createNotificationChannel(this)
+
+        val networkStatusMonitor = NetworkStatusMonitor(this)
+
+        // Observe network status changes
+        networkStatusMonitor.observe(this, Observer { isOnline ->
+            if (isOnline) {
+                showNotification(this, "Online", "Your device is now online.")
+            } else {
+                showNotification(this, "Offline", "Your device is now offline.")
+            }
+        })
+
+        shakeDetector = ShakeDetector(this) {
+            runOnUiThread {
+                bookAdapter.triggerShakeAnimation()
+            }
+        }
+        shakeDetector.start()
+    }
+
+    private fun schedulePeriodicWork(context: Context) {
+        val periodicWorkRequest = PeriodicWorkRequestBuilder<FetchBooksWorker>(15, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "FetchBooksWork",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            periodicWorkRequest
+        )
+    }
+
+    private fun reloadBooksFromDatabase() {
+        lifecycleScope.launch {
+            val bookDatabase = BookDatabase.getDatabase(this@MainActivity)
+            val books = bookDatabase.bookDao().getBooks() // Fetch books from Room
+            loadBooksIntoAdapter(books)
+        }
     }
 
     private fun loadBooksIntoAdapter(books: List<Book>) {
-        bookAdapter = BookAdapter(books) { book ->
+        bookAdapter = BookAdapter(this, books) { book ->
             navigateToBookDetail(book)
         }
         recyclerView.adapter = bookAdapter
-    }
-
-    private fun fetchBooksFromApi() {
-        val dataStoreManager = DataStoreManager(this)
-        val tokenFlow = dataStoreManager.getToken
-
-        lifecycleScope.launch {
-            tokenFlow.collect { token ->
-                if (token.isNotEmpty()) {
-                    Log.i("Fetching", "Entered with token: $token")
-                    RetrofitClient.apiService.getBooks("Bearer $token")
-                        .enqueue(object : Callback<List<Book>> {
-                            override fun onResponse(
-                                call: Call<List<Book>>,
-                                response: Response<List<Book>>
-                            ) {
-                                if (response.isSuccessful) {
-                                    val books = response.body() ?: emptyList()
-                                    // Insert books into Room database
-                                    lifecycleScope.launch {
-                                        val bookDatabase =
-                                            BookDatabase.getDatabase(this@MainActivity)
-                                        bookDatabase.bookDao().insertBooks(books)
-                                    }
-                                    // Load books into the adapter after fetching from API
-                                    loadBooksIntoAdapter(books)
-                                } else {
-                                    Log.e("MainPage", "onResponse: ${response.message()}")
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Error fetching books",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-
-                            override fun onFailure(call: Call<List<Book>>, t: Throwable) {
-                                Log.e("MainPage", "error: ${t.message}")
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Network error",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            }
-                        })
-                }
-            }
-        }
     }
 
     private fun navigateToBookDetail(book: Book) {
@@ -96,6 +107,10 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        shakeDetector.stop() // Stop shake detection to avoid memory leaks
+    }
 }
 
 

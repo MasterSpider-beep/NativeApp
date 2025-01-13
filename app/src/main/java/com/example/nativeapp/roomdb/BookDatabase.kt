@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import com.example.nativeapp.domain.Book
 import com.example.nativeapp.utils.BooleanConverter
 
-@Database(entities = [Book::class], version = 1)
+@Database(entities = [Book::class], version = 5)
 @TypeConverters(BooleanConverter::class)
 abstract class BookDatabase :RoomDatabase() {
     abstract fun bookDao(): BookDao
@@ -23,7 +23,9 @@ abstract class BookDatabase :RoomDatabase() {
                     context.applicationContext,
                     BookDatabase::class.java,
                     "book_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
